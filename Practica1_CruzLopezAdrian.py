@@ -1,28 +1,18 @@
-"""
-SNMPv1
-++++++
-Send SNMP GET request using the following options:
-  * with SNMPv1, community 'comunidadASR'
-  * over IPv4/UDP
-  * to an Agent at localhost
-  * for two instances of SNMPv2-MIB::sysDescr.0 MIB object,
-Functionally similar to:
-| $ snmpget -v1 -c comunidadASR localhost 1.3.6.1.2.1.1.1.0
-"""#
 import os
-
 from pysnmp.hlapi import *
 import datetime
 
-def consultaOID(comunidad,ip,OID):
+
+def consultaOID(comunidad, ip, OID):
     iterator = getCmd(
         SnmpEngine(),
         CommunityData(comunidad, mpModel=0),
         UdpTransportTarget((ip, 161)),
         ContextData(),
         ObjectType(ObjectIdentity(OID))
-        )
+    )
     return iterator
+
 
 def imprimirRespuesta(iterator):
 
@@ -33,7 +23,7 @@ def imprimirRespuesta(iterator):
 
     elif errorStatus:
         print('%s at %s' % (errorStatus.prettyPrint(),
-                        errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+                            errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
 
     else:
         for varBind in varBinds:
@@ -63,6 +53,7 @@ def createAgent():
 
 ### --- FUNCION PARA MODIFICAR AGENTES --- ###
 
+
 def updateAgent():
     datos_agente = []
     ipToUpdate = input("Direccion IP del agente a modificar: ")
@@ -76,7 +67,6 @@ def updateAgent():
     portLine = posicion + aux + 1
     communityLine = posicion + aux + 2
     versionLine = posicion + aux + 3
-
 
     ### --- DIRECCION IP --- ###
 
@@ -154,14 +144,15 @@ def deleteAgent():
 def createReport():
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
-    
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
+    from reportlab.lib import colors
 
     print('Direccion IP del agente a generar reporte')
     ipAgentReport = input()
 
     w, h = letter
     c = canvas.Canvas("ReportAgent_{}.pdf".format(ipAgentReport), pagesize=letter)
-    
+
     datos = []
     ip = []
     comunidad = []
@@ -171,25 +162,29 @@ def createReport():
             datos.extend(lineas.split())
 
     numero_agentes = int(len(datos)/3)
-    interlineado = 70
+    interlineado = 35
 
     indice_ip = datos.index(ipAgentReport)
     comunidad = datos[indice_ip + 2]
 
-    c.drawString(200, h - interlineado, "Administración de Servicios en Red")
-    c.drawString(200, h - (interlineado+20), "Práctica 1")
-    c.drawString(200, h - (interlineado+40), "Adquisión de información utilizando SNMP")
-    c.drawString(200, h - (interlineado+60), "Cruz López Adrián  Grupo: 4CM13")
+    c.setFont("Helvetica-Bold", 18)
+    c.drawCentredString(w/2, h - interlineado,"Administración de Servicios en Red")
+    c.drawCentredString(w/2, h - (interlineado+25), "Práctica 1")
+    c.drawCentredString(w/2, h - (interlineado+45), "Adquisión de información utilizando SNMP")
+    c.drawCentredString(w/2, h - (interlineado+70), "Cruz López Adrián      Grupo: 4CM13")
 
+    c.setFont("Helvetica-Bold", 11)
     c.drawString(100, h - (interlineado+100), "Información del agente")
     sysDescr = str(imprimirRespuesta(consultaOID(comunidad, datos[indice_ip], "1.3.6.1.2.1.1.1.0"))[0])
     sysOpWin = 'Windows'
     sysOpLin = 'Linux'
 
     if sysOpWin in sysDescr:
+        c.setFont("Times-Roman", 11)
         c.drawString(50, h - (interlineado+120), "Sistema: " + sysOpWin)
 
     else:
+        c.setFont("Times-Roman", 11)
         c.drawString(50, h - (interlineado+120), "Sistema: " + sysOpLin)
 
     sysName = str(imprimirRespuesta(consultaOID(comunidad, datos[indice_ip], "1.3.6.1.2.1.1.5.0"))[0])
@@ -211,6 +206,7 @@ def createReport():
     c.drawString(50, h - (interlineado+180), "Ubicación: " + sysLocationSplit[1])
     c.drawString(50, h - (interlineado+200), "Número de interfaces: " + numberInterfaceSplit[1])
 
+    c.setFont("Helvetica-Bold", 11)
     c.drawString(80, h - (interlineado+230), "Descripción y estatus de cada interface")
     aux = 0
 
@@ -224,7 +220,6 @@ def createReport():
             oidDesc_split = oidDesc.split('=')
 
             oidStatus = str(imprimirRespuesta(consultaOID(comunidad, datos[indice_ip], "1.3.6.1.2.1.2.2.1.8." + str(i + 1)))[0])
-            
 
             oidStatus_split = oidStatus.split('= ')
 
@@ -236,20 +231,20 @@ def createReport():
 
             if (str(oidStatus_split[1]) == "1"):
                 text = c.beginText(50, h - espacios)
-                text.setFont("Times-Roman", 12)
+                text.setFont("Times-Roman", 11)
                 text.textLines(str(int_hex) + " === UP")
                 c.drawText(text)
                 aux += 1
 
             elif (str(oidStatus_split[1]) == "2"):
                 text = c.beginText(50, h - espacios)
-                text.setFont("Times-Roman", 12)
+                text.setFont("Times-Roman", 11)
                 text.textLines(str(int_hex) + " === DOWN")
                 c.drawText(text)
                 aux += 1
             else:
                 text = c.beginText(50, h - espacios)
-                text.setFont("Times-Roman", 12)
+                text.setFont("Times-Roman", 11)
                 text.textLines(str(int_hex) + " === TESTING")
                 c.drawText(text)
                 aux += 1
@@ -260,27 +255,27 @@ def createReport():
             oidDesc_split = oidDesc.split('=')
 
             oidStatus = str(imprimirRespuesta(consultaOID(comunidad, datos[indice_ip], "1.3.6.1.2.1.2.2.1.8." + str(i + 1)))[0])
-            
+
             oidStatus_split = oidStatus.split('= ')
 
             espacios = interlineado + 250 + (aux*20)
 
             if (str(oidStatus_split[1]) == "1"):
                 text = c.beginText(50, h - espacios)
-                text.setFont("Times-Roman", 12)
+                text.setFont("Times-Roman", 11)
                 text.textLines(str(oidDesc_split[1]) + " === UP")
                 c.drawText(text)
                 aux += 1
 
             elif (str(oidStatus_split[1]) == "2"):
                 text = c.beginText(50, h - espacios)
-                text.setFont("Times-Roman", 12)
+                text.setFont("Times-Roman", 11)
                 text.textLines(str(oidDesc_split[1]) + " === DOWN")
                 c.drawText(text)
                 aux += 1
             else:
                 text = c.beginText(50, h - espacios)
-                text.setFont("Times-Roman", 12)
+                text.setFont("Times-Roman", 11)
                 text.textLines(str(oidDesc_split[1]) + " === TESTING")
                 c.drawText(text)
                 aux += 1
@@ -293,14 +288,17 @@ def createReport():
 
 
 def mostrar():
-    print("1. Agregar agente")
-    print("2. Modificar agente")
-    print("3. Eliminar agente")
-    print("4. Generar reporte")
-    print("5. Salir")
+    print("\n\n\t\tSistema de Administracion de Red")
+    print("\t    Practica 1 - Adquisicion de Informacion\n\t Adrian Cruz Lopez   Grupo: 4CM13    2020630087")
+    print("\nElige una opcion:")
+    print("  1. Agregar dispositivo")
+    print("  2. Modificar informacion del dispositivo")
+    print("  3. Eliminar dispositivo")
+    print("  4. Generar reporte")
+    print("  5. Salir")
     opt = int(input(">>> "))
 
-    return opt 
+    return opt
 
 def menu_principal():
     opt = mostrar()
@@ -317,10 +315,9 @@ def menu_principal():
             exit()
         else:
             print("Opcion incorrecta")
-        
+
         opt = mostrar()
 
 
 if __name__ == "__main__":
-    #main()
     menu_principal()
