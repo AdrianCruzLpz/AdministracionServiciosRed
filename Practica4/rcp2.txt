@@ -1,0 +1,41 @@
+hostname adrian
+!
+service telnet
+service http encrypted password ASKUVNIM$d9562fd978b64dcf986efee82fd5063d
+service ftp
+!
+administrator rcp encrypted password GSNQULIW$aiGizFeUwn5TJgmUxlYR6.
+!
+!
+!
+!
+router rip
+  network 40.40.40.0/24
+  network 30.30.30.0/24
+  network 10.10.10.0/24
+  network 20.20.20.0/24
+  network 192.168.1.0/24
+!
+interface loopback lo
+  ip address 127.0.0.1/8
+  ip mtu 16436
+!
+interface ethernet eth0
+  ip address 192.168.1.1/24
+  ip mtu 1500
+  no shutdown
+!
+interface ethernet eth1
+  ip address 30.30.30.1/24
+  ip mtu 1500
+  no shutdown
+!
+interface ethernet eth2
+  ip address 40.40.40.1/24
+  ip mtu 1500
+  no shutdown
+!
+interface ethernet eth3
+  ip mtu 1500
+  shutdown
+!
